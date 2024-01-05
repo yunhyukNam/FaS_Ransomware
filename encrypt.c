@@ -1,21 +1,17 @@
-#include <stdio.h>
-#include <Windows.h>
-#include <bcrypt.h>
+#include <openssl/sha.h>
 
-#include "type.h"
-
-#define RanLength 32
+#include "encrypt.h"
 
 void genALGhandler(BCRYPT_ALG_HANDLE* hAlgorithm) {
     NTSTATUS status = STATUS_UNSUCCESSFUL;
-    if (!NT_SUCCESS(status)) {
-        printf("[ERROR] 0xFF' : STATUS IS NOT CLEAR\n");
+    if (NT_SUCCESS(status)) {
+        printf("[ERROR] 0x0F : STATUS IS NOT CLEAR\n");
         exit(1);
     }
 
     status = BCryptOpenAlgorithmProvider(hAlgorithm, BCRYPT_RNG_ALGORITHM, NULL, 0);
     if (!NT_SUCCESS(status)) {
-        printf("[ERROR] 0x%x : BCryptOpenAlgorithmProvider Failed\n", status);
+        printf("[ERROR] %x : BCryptOpenAlgorithmProvider Failed\n", status);
         return;
     }
     return;
@@ -25,14 +21,10 @@ void genRandom(BCRYPT_ALG_HANDLE RNG_HANDLE, BYTE* byte) {
     BOOL RandomFlag = FALSE;
 
     NTSTATUS status = STATUS_UNSUCCESSFUL;
-    if (!NT_SUCCESS(status)) {
-        printf("[ERROR] 0x01 : STATUS IS NOT CLEAR\n");
-        exit(1);
-    }
 
-    status = BCryptGenRandom(RNG_HANDLE, byte, RanLength, BCRYPT_RNG_USE_ENTROPY_IN_BUFFER);
+    status = BCryptGenRandom(RNG_HANDLE, byte, rLength, BCRYPT_RNG_USE_ENTROPY_IN_BUFFER);
     if (!NT_SUCCESS(status)) {
-        printf("[ERROR] 0x%x : BCryptGenRandom Failed\n", status);
+        printf("[ERROR] %x : BCryptGenRandom Failed\n", status);
         return;
     }
     else {
@@ -41,9 +33,9 @@ void genRandom(BCRYPT_ALG_HANDLE RNG_HANDLE, BYTE* byte) {
         if (RandomFlag == TRUE) {
             printf("RANDOM ARRAY : ");
 
-            for (int cnt_i = 0; cnt_i < RanLength; cnt_i++) {
+            for (int cnt_i = 0; cnt_i < rLength; cnt_i++) {
                 if (cnt_i % 4 == 0) {
-                    printf("\n");
+                    printf("\n\t");
                 }
                 printf("0x%02x\t", byte[cnt_i]);
             }
@@ -53,14 +45,28 @@ void genRandom(BCRYPT_ALG_HANDLE RNG_HANDLE, BYTE* byte) {
     return;
 }
 
-int main() {
-    BCRYPT_ALG_HANDLE RNG_HANDLE = NULL;
-    BYTE randomValue[RanLength] = { 0x00, };
+void genHash(BYTE* byte) {
+    unsigned char Result[rLength];
+    SHA256(byte, sizeof(byte), Result);
 
-    genALGhandler(&RNG_HANDLE);
-    genRandom(RNG_HANDLE, randomValue);
+    printf("SHA-256 Hash: ");
+    for (int i = 0; i < rLength; ++i) {
+        printf("%02x", Result[i]);
+    }
+    printf("\n");
+}
 
-    BCryptCloseAlgorithmProvider(RNG_HANDLE, 0);
+//void genPK(BCRYPT_ALG_HANDLE PK_HANDLE, BYTE* byte) {
+//    BCRYPT_KEY_HANDLE pkKey = NULL;
+//    NTSTATUS status = STATUS_UNSUCCESSFUL;
+//
+//    status = BCryptGenerateKeyPair(PK_HANDLE, pkKey, BCRYPT_RSA_ALGORITHM, 0);
+//
+//    if (!NT_SUCCESS(status)) {
+//        printf("[ERROR] %x : BCryptGenerateKeyPair Failed\n", status);
+//    }
+//}
 
-    return 0;
+void genSK(BCRYPT_ALG_HANDLE SK_HANDLE, BYTE* byte) {
+
 }
